@@ -311,6 +311,10 @@ open class PagingMenuController: UIViewController {
 }
 
 extension PagingMenuController: UIScrollViewDelegate {
+    public func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        menuView?.menuDidScrol()
+    }
+    
     public func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
         onMove?(.didScrollEnd)
         

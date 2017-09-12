@@ -23,6 +23,9 @@ open class MenuView: UIScrollView {
     lazy fileprivate var underlineView: UIView = {
         return UIView(frame: .zero)
     }()
+    lazy fileprivate var underlineAlwaysCenterView: UIView = {
+        return UIView(frame: .zero)
+    }()
     lazy fileprivate var roundRectView: UIView = {
         $0.isUserInteractionEnabled = true
         return $0
@@ -89,6 +92,7 @@ open class MenuView: UIScrollView {
         constructor()
         layoutMenuItemViews()
         setupUnderlineViewIfNeeded()
+        setupUnderlineAlwaysCenterViewIfNeeded()
     }
     
     required public init?(coder aDecoder: NSCoder) {
@@ -159,7 +163,15 @@ open class MenuView: UIScrollView {
         layoutIfNeeded()
 
         animateUnderlineViewIfNeeded()
+        animateUnderlineAlwaysCentrViewIfNeeded()
         animateRoundRectViewIfNeeded()
+    }
+    
+    internal func menuDidScrol() {
+        if case .underlineAlwaysCenter = menuOptions.focusMode {
+            let width = underlineAlwaysCenterView.bounds.width
+            underlineAlwaysCenterView.frame.origin.x = contentOffset.x + (bounds.width - width) / 2
+        }
     }
     
     // MARK: - Private method
@@ -271,6 +283,15 @@ open class MenuView: UIScrollView {
         contentView.addSubview(underlineView)
     }
     
+    fileprivate func setupUnderlineAlwaysCenterViewIfNeeded() {
+        guard case let .underlineAlwaysCenter(height, color, horizontalPadding, verticalPadding) = menuOptions.focusMode else { return }
+        
+        let width = menuItemViews[currentPage].bounds.width - horizontalPadding * 2
+        underlineAlwaysCenterView.frame = CGRect(x: horizontalPadding, y: menuOptions.height - (height + verticalPadding), width: width, height: height)
+        underlineAlwaysCenterView.backgroundColor = color
+        contentView.addSubview(underlineAlwaysCenterView)
+    }
+    
     fileprivate func setupRoundRectViewIfNeeded() {
         guard case let .roundRect(radius, _, verticalPadding, selectedColor) = menuOptions.focusMode else { return }
         
@@ -289,6 +310,13 @@ open class MenuView: UIScrollView {
         underlineView.frame.size.width = targetFrame.width - horizontalPadding * 2
     }
     
+    fileprivate func animateUnderlineAlwaysCentrViewIfNeeded() {
+        guard case .underlineAlwaysCenter(_, _, let horizontalPadding, _) = menuOptions.focusMode else { return }
+        
+        let targetFrame = menuItemViews[currentPage].frame
+        underlineAlwaysCenterView.frame.size.width = targetFrame.width - horizontalPadding * 2
+    }
+    
     fileprivate func animateRoundRectViewIfNeeded() {
         guard case .roundRect(_, let horizontalPadding, _, _) = menuOptions.focusMode else { return }
         
@@ -305,6 +333,7 @@ open class MenuView: UIScrollView {
     fileprivate func positionMenuItemViews() {
         contentOffset.x = contentOffsetX
         animateUnderlineViewIfNeeded()
+        animateUnderlineAlwaysCentrViewIfNeeded()
         animateRoundRectViewIfNeeded()
     }
     
@@ -363,6 +392,7 @@ extension MenuView {
         contentView.removeFromSuperview()
         switch menuOptions.focusMode {
         case .underline: underlineView.removeFromSuperview()
+        case .underlineAlwaysCenter: underlineAlwaysCenterView.removeFromSuperview()
         case .roundRect: roundRectView.removeFromSuperview()
         case .none: break
         }
